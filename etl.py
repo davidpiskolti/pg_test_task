@@ -26,3 +26,8 @@ merged_df = merged_df.withColumn('week', weekofyear(col('order_purchase_timestam
 
 # Group by product and week to aggregate sales
 weekly_sales = merged_df.groupBy('product_id', 'week').sum('price').withColumnRenamed('sum(price)', 'total_sales')
+
+#3 save the output as parquet
+# Write the output to Parquet, partitioned by product
+output_path = "C:/Users/David_Piskolti/Downloads/pg_task_data/output/parquet"
+weekly_sales.write.mode('overwrite').partitionBy('product_id').parquet(output_path)
