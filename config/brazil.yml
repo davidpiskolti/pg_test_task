@@ -1,0 +1,4 @@
+input_paths:
+  orders: 'C:/Users/David_Piskolti/Downloads/pg_task_data/olist_orders_dataset.csv'
+  order_items: 'C:/Users/David_Piskolti/Downloads/pg_task_data/olist_order_items_dataset.csv'
+  products: 'C:/Users/David_Piskolti/Downloads/pg_task_data/olist_products_dataset.csv'
