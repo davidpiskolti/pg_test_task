@@ -40,3 +40,6 @@ def test_aggregate_data(etl):
     merged_df = etl.merge_data(orders, order_items, products)
     weekly_sales = etl.aggregate_data(merged_df)
     assert weekly_sales.count() > 0
+
+def test_sample():
+    assert True

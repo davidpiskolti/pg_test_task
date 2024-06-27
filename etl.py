@@ -53,8 +53,8 @@ class ETL:
         finally:
             self.spark.stop()
 
-config_path = 'config/brazil.yml'
-config = Config(config_path)
-etl = ETL(config)
-etl.run()
-
+if __name__ == "__main__":
+    config_path = 'config/brazil.yml'
+    config = Config(config_path)
+    etl = ETL(config)
+    etl.run()
