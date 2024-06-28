@@ -1,0 +1,20 @@
+input_paths:
+  orders: 'C:/Users/David_Piskolti/Downloads/pg_task_data/olist_orders_dataset.csv'
+  order_items: 'C:/Users/David_Piskolti/Downloads/pg_task_data/olist_order_items_dataset.csv'
+  products: 'C:/Users/David_Piskolti/Downloads/pg_task_data/olist_products_dataset.csv'
+output_path: 'C:/Users/David_Piskolti/Downloads/pg_task_data/output/parquet'
+columns:
+  orders:
+    order_id: 'order_id'
+    order_purchase_timestamp: 'order_purchase_timestamp'
+  order_items:
+    order_id: 'order_id'
+    product_id: 'product_id'
+    price: 'price'
+  products:
+    product_id: 'product_id'
+    product_category_name: 'product_category_name'
+aggregations:
+  group_by: ['product_id', 'week']
+  aggregate_column: 'price'
+  aggregation_function: 'sum'

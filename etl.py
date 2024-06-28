@@ -1,33 +1,60 @@
+import logging
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, to_date, weekofyear
+from pyspark.sql.functions import col, to_date, weekofyear, sum as spark_sum
+from config import Config
 
-# Initialize Spark session
-spark = SparkSession.builder.appName("E-Commerce ETL").getOrCreate()
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+class ETL:
+    def __init__(self, config):
+        self.config = config
+        self.spark = SparkSession.builder.appName("E-Commerce ETL").getOrCreate()
+    def load_data(self):
+        logger.info("Loading data...")
+        orders = self.spark.read.csv(self.config.input_paths['orders'], header=True, inferSchema=True)
+        order_items = self.spark.read.csv(self.config.input_paths['order_items'], header=True, inferSchema=True)
+        products = self.spark.read.csv(self.config.input_paths['products'], header=True, inferSchema=True)
+        return orders, order_items, products
+    def preprocess_data(self, orders, order_items, products):
+        logger.info("Preprocessing data...")
+        orders = orders.withColumn('order_purchase_timestamp', to_date(col(self.config.columns['orders']['order_purchase_timestamp'])))
+        order_items = order_items.select(self.config.columns['order_items']['order_id'], self.config.columns['order_items']['product_id'], self.config.columns['order_items']['price'])
+        orders = orders.select(self.config.columns['orders']['order_id'], self.config.columns['orders']['order_purchase_timestamp'])
+        products = products.select(self.config.columns['products']['product_id'], self.config.columns['products']['product_category_name'])
+        return orders, order_items, products
+    def merge_data(self, orders, order_items, products):
+        logger.info("Merging data...")
+        merged_df = order_items.join(orders, on=self.config.columns['order_items']['order_id']).join(products, on=self.config.columns['order_items']['product_id'])
+        return merged_df
 
-#1 Load data
-orders = spark.read.csv('C:/Users/David_Piskolti/Downloads/pg_task_data/olist_orders_dataset.csv', header=True, inferSchema=True)
-order_items = spark.read.csv('C:/Users/David_Piskolti/Downloads/pg_task_data/olist_order_items_dataset.csv', header=True, inferSchema=True)
-products = spark.read.csv('C:/Users/David_Piskolti/Downloads/pg_task_data/olist_products_dataset.csv', header=True, inferSchema=True)
+    def aggregate_data(self, merged_df):
+        logger.info("Aggregating data...")
+        merged_df = merged_df.withColumn('week', weekofyear(col(self.config.columns['orders']['order_purchase_timestamp'])))
+        weekly_sales = merged_df.groupBy(self.config.columns['order_items']['product_id'], 'week').agg(
+            spark_sum(col(self.config.columns['order_items']['price'])).alias('total_sales')
+        )
+        return weekly_sales
 
-#2 Data Cleaning and preprocessing
-# Convert dates to datetime objects
-orders = orders.withColumn('order_purchase_timestamp', to_date(col('order_purchase_timestamp')))
+    def save_data(self, weekly_sales):
+        logger.info(f"Saving data to {self.config.output_path}")
+        weekly_sales.write.mode('overwrite').partitionBy(self.config.columns['products']['product_id']).parquet(self.config.output_path)
 
-# Select relevant columns
-order_items = order_items.select('order_id', 'product_id', 'price')
-orders = orders.select('order_id', 'order_purchase_timestamp')
-products = products.select('product_id', 'product_category_name')
+    def run(self):
+        try:
+            orders, order_items, products = self.load_data()
+            orders, order_items, products = self.preprocess_data(orders, order_items, products)
+            merged_df = self.merge_data(orders, order_items, products)
+            weekly_sales = self.aggregate_data(merged_df)
+            self.save_data(weekly_sales)
+            logger.info("ETL process completed successfully.")
+        except Exception as e:
+            logger.error(f"An error occurred: {e}")
+        finally:
+            self.spark.stop()
 
-# Merge datasets
-merged_df = order_items.join(orders, on='order_id').join(products, on='product_id')
-
-# Add 'week' column for grouping by week
-merged_df = merged_df.withColumn('week', weekofyear(col('order_purchase_timestamp')))
-
-# Group by product and week to aggregate sales
-weekly_sales = merged_df.groupBy('product_id', 'week').sum('price').withColumnRenamed('sum(price)', 'total_sales')
-
-#3 save the output as parquet
-# Write the output to Parquet, partitioned by product
-output_path = "C:/Users/David_Piskolti/Downloads/pg_task_data/output/parquet"
-weekly_sales.write.mode('overwrite').partitionBy('product_id').parquet(output_path)
+if __name__ == "__main__":
+    config_path = 'config/brazil.yml'
+    config = Config(config_path)
+    etl = ETL(config)
+    etl.run()
