@@ -1,7 +1,6 @@
-import logging
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, to_date, weekofyear, sum as spark_sum
-from config import Config
+import logging
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -9,7 +8,13 @@ logger = logging.getLogger(__name__)
 class ETL:
     def __init__(self, config):
         self.config = config
-        self.spark = SparkSession.builder.appName("E-Commerce ETL").getOrCreate()
+        self.spark = SparkSession.builder \
+            .appName("E-Commerce ETL") \
+            .config("spark.sql.shuffle.partitions", "50") \
+            .config("spark.executor.memory", "2g") \
+            .config("spark.driver.memory", "2g") \
+            .getOrCreate()
+
     def load_data(self):
         logger.info("Loading data...")
         orders = self.spark.read.csv(self.config.input_paths['orders'], header=True, inferSchema=True)
@@ -38,7 +43,9 @@ class ETL:
 
     def save_data(self, weekly_sales):
         logger.info(f"Saving data to {self.config.output_path}")
-        weekly_sales.write.mode('overwrite').partitionBy(self.config.columns['products']['product_id']).parquet(self.config.output_path)
+        # Coalesce to a single partition to ensure a single Parquet file
+        single_file_data = weekly_sales.coalesce(1)
+        single_file_data.write.mode('overwrite').parquet(self.config.output_path)
 
     def run(self):
         try:
@@ -52,9 +59,3 @@ class ETL:
             logger.error(f"An error occurred: {e}")
         finally:
             self.spark.stop()
-
-if __name__ == "__main__":
-    config_path = 'config/brazil.yml'
-    config = Config(config_path)
-    etl = ETL(config)
-    etl.run()
