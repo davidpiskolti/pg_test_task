@@ -1,7 +1,6 @@
-import logging
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, to_date, weekofyear, sum as spark_sum
-from config import Config
+import logging
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -52,9 +51,3 @@ class ETL:
             logger.error(f"An error occurred: {e}")
         finally:
             self.spark.stop()
-
-if __name__ == "__main__":
-    config_path = 'config/brazil.yml'
-    config = Config(config_path)
-    etl = ETL(config)
-    etl.run()
