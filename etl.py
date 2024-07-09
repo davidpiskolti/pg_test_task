@@ -6,9 +6,9 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 class ETL:
-    def __init__(self, config):
+    def __init__(self, config, spark=None):
         self.config = config
-        self.spark = SparkSession.builder \
+        self.spark = spark or SparkSession.builder \
             .appName("E-Commerce ETL") \
             .config("spark.sql.shuffle.partitions", "50") \
             .config("spark.executor.memory", "2g") \
