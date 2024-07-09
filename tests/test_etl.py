@@ -1,5 +1,6 @@
 import pytest
 from pyspark.sql import SparkSession
+from pyspark.sql import Row
 from etl import ETL
 from config import Config
 
@@ -12,31 +13,49 @@ def config():
     return Config('config/brazil.yml')
 
 @pytest.fixture
-def etl(config):
-    return ETL(config)
+def etl(config, spark):
+    etl_instance = ETL(config)
+    etl_instance.spark = spark  # Use the test Spark session
+    return etl_instance
 
-def test_load_data(etl):
-    orders, order_items, products = etl.load_data()
+@pytest.fixture
+def mock_data(spark):
+    orders_data = [
+        Row(order_id='1', order_purchase_timestamp='2023-01-01'),
+        Row(order_id='2', order_purchase_timestamp='2023-01-02')
+    ]
+    order_items_data = [
+        Row(order_id='1', product_id='101', price=10.0),
+        Row(order_id='2', product_id='102', price=20.0)
+    ]
+    products_data = [
+        Row(product_id='101', product_category_name='Category1'),
+        Row(product_id='102', product_category_name='Category2')
+    ]
+    orders = spark.createDataFrame(orders_data)
+    order_items = spark.createDataFrame(order_items_data)
+    products = spark.createDataFrame(products_data)
+    return orders, order_items, products
+
+def test_load_data(etl, mock_data):
+    orders, order_items, products = mock_data
     assert orders.count() > 0
     assert order_items.count() > 0
     assert products.count() > 0
 
-def test_preprocess_data(etl):
-    orders, order_items, products = etl.load_data()
-    orders, order_items, products = etl.preprocess_data(orders, order_items, products)
+def test_preprocess_data(etl, mock_data):
+    orders, order_items, products = etl.preprocess_data(*mock_data)
     assert 'order_purchase_timestamp' in orders.columns
     assert 'order_id' in order_items.columns
     assert 'product_id' in products.columns
 
-def test_merge_data(etl):
-    orders, order_items, products = etl.load_data()
-    orders, order_items, products = etl.preprocess_data(orders, order_items, products)
+def test_merge_data(etl, mock_data):
+    orders, order_items, products = etl.preprocess_data(*mock_data)
     merged_df = etl.merge_data(orders, order_items, products)
     assert merged_df.count() > 0
 
-def test_aggregate_data(etl):
-    orders, order_items, products = etl.load_data()
-    orders, order_items, products = etl.preprocess_data(orders, order_items, products)
+def test_aggregate_data(etl, mock_data):
+    orders, order_items, products = etl.preprocess_data(*mock_data)
     merged_df = etl.merge_data(orders, order_items, products)
     weekly_sales = etl.aggregate_data(merged_df)
     assert weekly_sales.count() > 0
