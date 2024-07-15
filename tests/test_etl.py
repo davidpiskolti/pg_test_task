@@ -6,7 +6,12 @@ from config import Config
 
 @pytest.fixture(scope="session")
 def spark():
-    return SparkSession.builder.appName("E-Commerce ETL Test").master("local[2]").getOrCreate()
+    return SparkSession.builder \
+        .appName("E-Commerce ETL Test") \
+        .master("local[2]") \
+        .config("spark.executorEnv.PYSPARK_PYTHON", "python") \
+        .config("spark.yarn.appMasterEnv.PYSPARK_PYTHON", "python") \
+        .getOrCreate()
 
 @pytest.fixture
 def config():
