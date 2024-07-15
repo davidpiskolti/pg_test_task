@@ -1,8 +1,8 @@
 input_paths:
-  orders: 'C:/Users/David_Piskolti/Downloads/pg_task_data/olist_orders_dataset.csv'
-  order_items: 'C:/Users/David_Piskolti/Downloads/pg_task_data/olist_order_items_dataset.csv'
-  products: 'C:/Users/David_Piskolti/Downloads/pg_task_data/olist_products_dataset.csv'
-output_path: 'C:/Users/David_Piskolti/Downloads/pg_task_data/output/parquet'
+  orders: 'data/olist_orders_dataset.csv'
+  order_items: 'data/olist_order_items_dataset.csv'
+  products: 'data/olist_products_dataset.csv'
+output_path: 'output/parquet'
 columns:
   orders:
     order_id: 'order_id'
