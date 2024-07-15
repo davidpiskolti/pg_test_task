@@ -1,6 +1,5 @@
 import pytest
 from pyspark.sql import SparkSession
-from pyspark.sql import Row
 from etl import ETL
 from config import Config
 
