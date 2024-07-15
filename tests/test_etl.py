@@ -4,9 +4,17 @@ from pyspark.sql import SparkSession, Row
 from etl import ETL
 from config import Config
 
-# Set the environment variables for PySpark
-os.environ['PYSPARK_PYTHON'] = os.path.join(os.getcwd(), 'venv', 'Scripts', 'python.exe')
-os.environ['PYSPARK_DRIVER_PYTHON'] = os.path.join(os.getcwd(), 'venv', 'Scripts', 'python.exe')
+# Check if running on GitHub Actions
+is_github_actions = os.getenv('GITHUB_ACTIONS') == 'true'
+
+if is_github_actions:
+    # Set the environment variables for PySpark on GitHub Actions
+    os.environ['PYSPARK_PYTHON'] = 'python'
+    os.environ['PYSPARK_DRIVER_PYTHON'] = 'python'
+else:
+    # Set the environment variables for PySpark locally
+    os.environ['PYSPARK_PYTHON'] = os.path.join(os.getcwd(), 'venv', 'Scripts', 'python.exe')
+    os.environ['PYSPARK_DRIVER_PYTHON'] = os.path.join(os.getcwd(), 'venv', 'Scripts', 'python.exe')
 @pytest.fixture(scope="session")
 def spark():
     """Fixture to initialize a Spark session."""
