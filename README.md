@@ -8,7 +8,6 @@ Before running the ETL pipeline, ensure you have the following software installe
 
 - Python 3.11
 - Java Development Kit (JDK) 8 or higher
-- Apache Hadoop (for native libraries)
 
 ### Installing Dependencies
 
@@ -17,18 +16,26 @@ Install the required Python packages using pip:
 
 pip install pyspark pytest pyyaml
 
-
-### Setting Up Hadoop on Windows
-
-- Download the Hadoop binary for Windows from here.
-- Extract the hadoop folder and place it in a directory, e.g., C:/hadoop.
-- Set the following environment variables:
-
-
-export HADOOP_HOME=C:/hadoop export JAVA_HOME=“C:/Program Files/Java/jdk-<version>” export PATH=$PATH:C:/hadoop/bin
-
-
 ## Project Structure
+```
+pg_test_task/
+│
+├── config/
+│   └── brazil.yml
+│
+├── tests/
+│   └── test_etl.py
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
+├── etl.py
+├── config.py
+├── main.py
+├── requirements.txt
+└── README.md
+```
 
 - `etl.py`: Contains the ETL class and its methods.
 - `test_etl.py`: Contains unit tests for the ETL pipeline.
@@ -92,7 +99,7 @@ jobs:
         python-version: '3.11'
     - name: Install dependencies
       run: |
-        pip install pyspark pytest pyyaml
+        pip install -r requirements.txt
     - name: Run tests
       env:
         PYTHONPATH: ${{ github.workspace }}
